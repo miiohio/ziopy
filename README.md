@@ -1,2 +1,2 @@
-# ziopy
+# ZIO.py
 ZIO for Python
