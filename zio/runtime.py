@@ -1,13 +1,13 @@
-from typing import Any, Deque, List, TypeVar, Generic
+from typing import Any, Generic, List, TypeVar
 
-from zio.zio import ZIO, FlatMap, EffectPartial, EffectTotal, Fail, MapFn, Fold, FoldCauseMFailureFn, Provide, Read, Succeed
-from zio.either import Either
 from zio.cause import Cause
-
+from zio.zio import (ZIO, EffectPartial, EffectTotal, Fail, FlatMap, Fold,
+                     MapFn, Provide, Read, Succeed)
 
 A = TypeVar('A')
 E = TypeVar('E')
 R = TypeVar('R', covariant=True)
+
 
 class Runtime(Generic[R]):
     def __init__(self) -> None:
@@ -18,15 +18,15 @@ class Runtime(Generic[R]):
             the_zio = zio.zio
             k = zio.k
             a = self.unsafe_run_sync(the_zio)
-            return self.unsafe_run_sync(k(a)) # type: ignore
+            return self.unsafe_run_sync(k(a))  # type: ignore
         elif isinstance(zio, EffectTotal):
             return zio.effect()
         elif isinstance(zio, EffectPartial):
-            return zio.effect() # type: ignore
+            return zio.effect()  # type: ignore
         elif isinstance(zio, Fail):
-            raise zio.cause.value # type: ignore
+            raise zio.cause.value  # type: ignore
         elif isinstance(zio, MapFn):
-            return zio(a) # type: ignore
+            return zio(a)  # type: ignore
         elif isinstance(zio, Fold):
             value = self.unsafe_run_sync(zio.value)
             if isinstance(value, Cause):
@@ -36,10 +36,10 @@ class Runtime(Generic[R]):
         elif isinstance(zio, Provide):
             self.environments.append(zio.r)
             # TODO: Bracket the environment
-            return self.unsafe_run_sync(zio.next) # type: ignore
+            return self.unsafe_run_sync(zio.next)  # type: ignore
         elif isinstance(zio, Read):
             r = self.environments[-1]
-            return self.unsafe_run_sync(zio.k(r)) # type: ignore
+            return self.unsafe_run_sync(zio.k(r))  # type: ignore
         elif isinstance(zio, Succeed):
             return zio.value
         else:

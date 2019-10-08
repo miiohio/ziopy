@@ -4,16 +4,20 @@ from zio.console import Console, LiveConsole
 from zio.runtime import Runtime
 from zio.zio import ZIO, ZIOStatic
 
+
 def print_line(line: str) -> ZIO[Console, NoReturn, None]:
     return ZIOStatic.access_m(lambda env: env.print(line))
+
 
 def read_line(prompt: str) -> ZIO[Console, Exception, str]:
     return ZIOStatic.access_m(lambda env: env.input(prompt))
 
+
 program: ZIO[Console, Exception, None] = \
     print_line("Good morning!") \
-        .flat_map(lambda _: read_line("What is your name? ") \
-        .flat_map(lambda name: print_line(f"Good to meet you, {name}!")))
+    .flat_map(lambda _: read_line("What is your name? ")
+    .flat_map(lambda name: print_line(f"Good to meet you, {name}!")))  # noqa
+
 
 runtime = Runtime[LiveConsole]()
 live_console = LiveConsole()

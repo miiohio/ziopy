@@ -5,6 +5,7 @@ from zio.either import Either
 
 E = TypeVar('E', covariant=True)
 
+
 class Cause(Generic[E], metaclass=ABCMeta):
     @abstractmethod
     def failure_or_cause(self) -> Either[E, 'Cause[NoReturn]']:
