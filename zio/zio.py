@@ -44,6 +44,8 @@ class ZIO(Generic[R, E, A]):
     def provide(self, r: R) -> 'IO[E, A]':
         return ZIOStatic.provide(r)(self)
 
+    def __invert__(self) -> A:
+        pass
 
 # NOTE: Putting these static methods in a different class to avoid name clashes.
 # It would be nice to put them in the ZIO class, but...Python.
