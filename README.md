@@ -1,8 +1,8 @@
 # ZIO.py
 ZIO for Python (see https://github.com/zio/zio)
 
-This is a fairly straightforward port of the ingenious Scala ZIO library.  Work
-in progress.  Feel free to help out!
+This is a fairly straightforward (unofficial and plucky) port of the
+ingenious Scala ZIO library.  Work in progress.
 
 # Running the examples
 
@@ -98,7 +98,7 @@ cannot argue with me here, don't even try.)
 To use it, first import the following at the top of your source file:
 
 ```python
-from macros.macro_module import macros, monad
+from zio.syntax import macros, monad
 ```
 
 This will load the macro tooling, which you can invoke by creating a `with` block
