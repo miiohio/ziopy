@@ -6,17 +6,9 @@ For potentially better syntax using the macropy monad comprehension macro, see
 
 from typing import NoReturn
 
-from zio.console import Console, LiveConsole
+from zio.console import Console, LiveConsole, read_line, print_line
 from zio.runtime import Runtime
 from zio.zio import ZIO, ZIOStatic
-
-
-def print_line(line: str) -> ZIO[Console, NoReturn, None]:
-    return ZIOStatic.access_m(lambda env: env.print(line))
-
-
-def read_line(prompt: str) -> ZIO[Console, Exception, str]:
-    return ZIOStatic.access_m(lambda env: env.input(prompt))
 
 
 if __name__ == "__main__":

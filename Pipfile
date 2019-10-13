@@ -6,11 +6,10 @@ verify_ssl = true
 [dev-packages]
 flake8 = "==3.7.8"
 mypy = "==0.730"
+pytest = "==5.1.2"
 
 [packages]
 macropy3 = "==1.1.0b2"
-pytest = "==5.1.2"
-mypy = "==0.730"
 
 [requires]
 python_version = "3.7"

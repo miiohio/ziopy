@@ -8,11 +8,10 @@ See:  https://docs.scala-lang.org/tutorials/FAQ/yield.html
 """
 
 from typing import Any
-from macros.macro_module import macros, monad
 
-from example.example import print_line, read_line
 from zio.zio import ZIO, ZIOStatic
-from zio.console import Console
+from zio.console import Console, print_line, read_line
+from zio.syntax import macros, monad
 
 # To keep the IDE happy, declare `program` here.  Technically this
 # is not necessary, as it is instantiated/bound via the `with monad`

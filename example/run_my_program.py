@@ -6,7 +6,7 @@ Note that you must `import macropy.activate` at the top of the file.
 import macropy.activate
 from example.my_program import program
 
-from zio.console import Console, LiveConsole
+from zio.console import LiveConsole
 from zio.runtime import Runtime
 
 if __name__ == "__main__":

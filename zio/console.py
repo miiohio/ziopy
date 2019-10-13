@@ -20,3 +20,11 @@ class LiveConsole(Console):
 
     def input(self, prompt: str) -> ZIO[R, Exception, str]:
         return ZIOStatic.effect(lambda: input(prompt))
+
+
+def print_line(line: str) -> ZIO[Console, NoReturn, None]:
+    return ZIOStatic.access_m(lambda env: env.print(line))
+
+
+def read_line(prompt: str) -> ZIO[Console, Exception, str]:
+    return ZIOStatic.access_m(lambda env: env.input(prompt))
