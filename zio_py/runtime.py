@@ -1,7 +1,7 @@
 from typing import Any, Generic, List, TypeVar
 
-from zio.cause import Cause
-from zio.zio import (ZIO, EffectPartial, EffectTotal, Fail, FlatMap, Fold,
+from zio_py.cause import Cause
+from zio_py.zio import (ZIO, EffectPartial, EffectTotal, Fail, FlatMap, Fold,
                      MapFn, Provide, Read, Succeed)
 
 A = TypeVar('A')

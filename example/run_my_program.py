@@ -6,8 +6,8 @@ Note that you must `import macropy.activate` at the top of the file.
 import macropy.activate
 from example.my_program import program
 
-from zio.console import LiveConsole
-from zio.runtime import Runtime
+from zio_py.console import LiveConsole
+from zio_py.runtime import Runtime
 
 if __name__ == "__main__":
     runtime = Runtime[LiveConsole]()

@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import NoReturn, TypeVar
 
-from zio.zio import ZIO, ZIOStatic
+from zio_py.zio import ZIO, ZIOStatic
 
 R = TypeVar('R')
 
