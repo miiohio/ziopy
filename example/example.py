@@ -6,9 +6,9 @@ For potentially better syntax using the macropy monad comprehension macro, see
 
 from typing import NoReturn
 
-from zio.console import Console, LiveConsole, read_line, print_line
-from zio.runtime import Runtime
-from zio.zio import ZIO, ZIOStatic
+from zio_py.console import Console, LiveConsole, read_line, print_line
+from zio_py.runtime import Runtime
+from zio_py.zio import ZIO, ZIOStatic
 
 
 if __name__ == "__main__":

@@ -47,8 +47,8 @@ guide on using ZIO.  In Scala. :)
 Here is a basic console I/O program using ZIO for Python:
 
 ```python
-from zio.zio import ZIO, ZIOStatic
-from zio.console import Console
+from zio_py.zio import ZIO, ZIOStatic
+from zio_py.console import Console
 
 def print_line(line: str) -> ZIO[Console, NoReturn, None]:
     return ZIOStatic.access_m(lambda env: env.print(line))
@@ -68,8 +68,8 @@ construct a `runtime` (instance of `Runtime`).  Below we create a runtime that
 that can run programs whose _environment_ is of type `LiveConsole`.
 
 ```python
-from zio.runtime import Runtime
-from zio.console import LiveConsole
+from zio_py.runtime import Runtime
+from zio_py.console import LiveConsole
 
 runtime = Runtime[LiveConsole]()
 ```
@@ -98,7 +98,7 @@ cannot argue with me here, don't even try.)
 To use it, first import the following at the top of your source file:
 
 ```python
-from zio.syntax import macros, monad
+from zio_py.syntax import macros, monad
 ```
 
 This will load the macro tooling, which you can invoke by creating a `with` block

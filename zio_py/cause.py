@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import Generic, NoReturn, TypeVar
 
-from zio.either import Either
+from zio_py.either import Either
 
 E = TypeVar('E', covariant=True)
 

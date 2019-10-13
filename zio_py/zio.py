@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Generic, NoReturn, TypeVar
 
-from zio.cause import Cause
+from zio_py.cause import Cause
 
 
 A = TypeVar('A', covariant=True)
