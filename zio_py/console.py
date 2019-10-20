@@ -5,6 +5,7 @@ from zio_py.zio import ZIO, ZIOStatic
 
 R = TypeVar('R')
 
+
 class Console(metaclass=ABCMeta):
     @abstractmethod
     def print(self, line: str) -> ZIO[R, NoReturn, None]:
@@ -13,6 +14,7 @@ class Console(metaclass=ABCMeta):
     @abstractmethod
     def input(self, prompt: str) -> ZIO[R, Exception, str]:
         pass
+
 
 class LiveConsole(Console):
     def print(self, line: str) -> ZIO[R, NoReturn, None]:

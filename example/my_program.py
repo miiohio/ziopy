@@ -7,18 +7,15 @@ This is inspired by Scala's for comprehension desugaring.
 See:  https://docs.scala-lang.org/tutorials/FAQ/yield.html
 """
 
-from typing import Any
-
-from zio_py.zio import ZIO, ZIOStatic
 from zio_py.console import Console, print_line, read_line
-from zio_py.syntax import macros, monad
+from zio_py.syntax import macros, monadic  # noqa: F401
+from zio_py.zio import ZIO, ZIOStatic
 
-# To keep the IDE happy, declare `program` here.  Technically this
-# is not necessary, as it is instantiated/bound via the `with monad`
-# block below.
-program: ZIO[Console, Exception, int]
 
-with monad(program):
+# To use the `~` short-hand syntax for monadic binds within a function,
+# decorate your function with the `@monadic` decorator.
+@monadic
+def my_program() -> ZIO[Console, Exception, int]:
     # You can declare variables that are not lifted into a monadic context.
     w = 'sunshine'
 
@@ -32,11 +29,23 @@ with monad(program):
     # This is a monadic bind where the variable is called `name`.
     # Desugars (approximately) to `read_line(...).flat_map(lambda name: ...)`
     name = ~read_line("Enter your name: ")
+
+    # Yes, type inference with mypy and in the IDE works!
+    # reveal_type(name) will show `str`
+
     your_age = 42
     ~print_line(f"Good to meet you, {name}!")
     ~print_line(f"Your age is {your_age}.")
 
-    # The `~ZIOStatic.succeed(1000)` is like `return 1000` in Haskell, or
+    # The usual complex assignment syntaxes work as well.
+    [x, y, z] = ~ZIOStatic.succeed([1, 2, 3])
+    ~print_line(f"X is {x}")
+    ~print_line(f"Y is {y}")
+    ~print_line(f"Z is {z}")
+
+    # The `ZIOStatic.succeed(1000)` is like `return 1000` in Haskell, or
     # `yield 1000` in Scala.
-    print("That's all folks.")
-    ~ZIOStatic.succeed(1000)
+    # The rule is simple; you just have to return a value consistent with the
+    # type signature of your function (like always).  Mypy will complain
+    # at you if you get anything wrong.
+    return ZIOStatic.succeed(1000)

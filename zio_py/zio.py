@@ -3,7 +3,6 @@ from typing import Any, Callable, Generic, NoReturn, TypeVar
 
 from zio_py.cause import Cause
 
-
 A = TypeVar('A', covariant=True)
 E = TypeVar('E', covariant=True)
 R = TypeVar('R', contravariant=True)
@@ -49,6 +48,8 @@ class ZIO(Generic[R, E, A]):
 
 # NOTE: Putting these static methods in a different class to avoid name clashes.
 # It would be nice to put them in the ZIO class, but...Python.
+
+
 class ZIOStatic:
     @staticmethod
     def access(f: Callable[[R1], A1]) -> 'ZIO[R1, NoReturn, A1]':

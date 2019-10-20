@@ -1,189 +1,232 @@
-"""Syntactic sugar for monadic comprehensions with ZIO for Python.
-
-Here is an example of how the desugaring works.  Consider the following
-program written as a monad comprehension:
-
-with monad(result):
-    w = 'asdf'
-    ~print_line("Good morning!")
-    print("Meow")
-    x = ~read_line("Enter your name: ")
-    y = 42
-    print("Woof woof")
-    ~print_line(f"Good to meet you, {x} {y} {w}!")
-    print("That's all")
-
-============================================================================
-
-First thing we do in macro expansion is get a list of these statements:
-tree = [
-    w = 'asdf',
-    ~print_line("Good morning!"),
-    print("Meow"),
-    x = ~read_line("Enter your name: "),
-    y = 42,
-    print("Woof woof"),
-    ~print_line(f"Good to meet you, {x} {y} {w}!"),
-    print("That's all")
-]
-
-We start at the end of the list, finding the first monadic thingy (having '~'),
-and we turn that into either a `map` or `flat_map`:
-
-    statement:
-      ~print_line(f"Good to meet you, {x} {y} {w}!"),
-    remainder:
-      [print("That's all")]
-
-    result:
-      def fun1(var1):
-          return print("That's all")
-      print_line(f"Good to meet you, {x} {y} {w}!").map(fun1)
-
-Now get the next previous collection of statements beginning with a '~' term:
-
-    statement:
-      x = ~read_line("Enter your name: "),
-    remainder:
-      [
-        y = 42,
-        print("Woof woof"),
-        def fun1(var1):
-          return print("That's all")
-        print_line(f"Good to meet you, {x} {y} {w}!").map(fun1)
-      ]
-
-    result:
-      def fun2(x):
-          y = 42
-          print("Woof woof")
-          def fun1(var1):
-              return print("That's all")
-          return print_line(f"Good to meet you, {x} {y} {w}!").map(fun1)
-      read_line("Enter your name: ").flat_map(fun2)
-
-And get the next previous collection beginning with '~':
-
-    statement:
-      ~print_line("Good morning!")
-    remainder:
-      [
-          print("Meow"),
-          def fun2(x):,
-              y = 42,
-              print("Woof woof"),
-              def fun1(var1):,
-                  return print("That's all"),
-              return print_line(f"Good to meet you, {x} {y} {w}!").map(fun1),
-          read_line("Enter your name: ").flat_map(fun2)
-      ]
-
-    result:
-      def fun3(var2):
-          print("Meow")
-          def fun2(x):
-              y = 42
-              print("Woof woof")
-              def fun1(var1):
-                  return print("That's all")
-              return print_line(f"Good to meet you, {x} {y} {w}!").map(fun1)
-          return read_line("Enter your name: ").flat_map(fun2)
-      print_line("Good morning!").flat_map(fun3)
-
-Finally, we have to prepend any lines that come before the first '~', and bind
-the final value to the `with monad(result)` variable:
-
-  statement:
-    <none>
-  remainder:
-      w = 'asdf'
-      def fun3(var2):
-          print("Meow")
-          def fun2(x):
-              y = 42
-              print("Woof woof")
-              def fun1(var1):
-                  return print("That's all")
-              return print_line(f"Good to meet you, {x} {y} {w}!").map(fun1)
-          return read_line("Enter your name: ").flat_map(fun2)
-      print_line("Good morning!").flat_map(fun3)
-
-  result:
-      def fun4(var3):
-          w = 'asdf'
-          def fun3(var2):
-              print("Meow")
-              def fun2(x):
-                  y = 42
-                  print("Woof woof")
-                  def fun1(var1):
-                      return print("That's all")
-                  return print_line(f"Good to meet you, {x} {y} {w}!").map(fun1)
-              return read_line("Enter your name: ").flat_map(fun2)
-          return print_line("Good morning!").flat_map(fun3)
-      result = ZIO.succeed(None).flat_map(fun4)
-"""
-
 import ast
-from macropy.core import real_repr, unparse
+from typing import List, cast
+
 from macropy.core.macros import Macros
-from macropy.core.quotes import macros, q, ast_literal, u, name
-from typing import Any, Tuple, Optional, List
+from macropy.core.quotes import macros, q, ast_literal, name
 
-macros = Macros()
+macros = Macros()  # noqa: F811
 
-@macros.block
-def monad(tree, args, gen_sym, **kw):
 
-    def make_remainder_function(func_name: str, var_name: str, body: List):
-        if not body:
-            body = [ast.Return(q[name[var_name]])]  # mypy: ignore
-        else:
-            body.append(ast.Return(body.pop().value))
-        return ast.FunctionDef(func_name, ast.arguments([ast.arg(var_name, None)], None, [], [], None, []), body, [], None)
+@macros.decorator
+def monadic(tree, gen_sym, **kw):
+    if isinstance(tree, ast.FunctionDef):
+        return desugar_statement_list([tree], gen_sym)[0]
+    else:
+        raise Exception("@monad decorator can only be used for function definitions")
 
-    # Check for `foo = ~bar`
-    def is_bind_throwaway(node) -> bool:
-        return isinstance(node, ast.Expr) \
-            and isinstance(node.value, ast.UnaryOp) \
-            and isinstance(node.value.op, ast.Invert)
+# Transforms one of these:
+#
+#    def my_function(...):
+#        bar = 42
+#        import whatever
+#        ...
+#        bippy = ~(x)
+#        [...more statements...]
+#
+# into one of these:
+#    bar = 42
+#    import whatever
+#    ...
+#    def rest(bippy):
+#        [...more statements...]
 
-    # Check for `~bar`
-    def is_bind(node) -> bool:
-        return isinstance(node, ast.Assign) \
-            and isinstance(node.value, ast.UnaryOp) \
-            and isinstance(node.value.op, ast.Invert)
 
-    def last_index_of(xs, pred):
-        for i in reversed(range(len(xs))):
-            if pred(xs[i]):
-                return i
-        return None
+def desugar_statement_list(stmts: List[ast.stmt], gen_sym) -> List[ast.stmt]:
+    idx = len(stmts)
+    while idx >= 0:
+        remainder = stmts[idx:]
+        remainder_desugared = desugar_remainder(remainder, gen_sym)
+        stmts = stmts[:idx] + remainder_desugared
+        idx -= 1
+    return stmts
 
-    use_map = True
-    while(True):
-        idx_last_bind = last_index_of(tree, lambda x: is_bind_throwaway(x) or is_bind(x))
-        if idx_last_bind is None:
+
+def desugar_remainder(remainder: List[ast.stmt], gen_sym) -> List[ast.stmt]:
+    if not remainder:
+        return []
+
+    stmt = remainder[0]
+    if isinstance(stmt, ast.FunctionDef):
+        stmt.body = desugar_statement_list(stmt.body, gen_sym)
+        return remainder
+    elif isinstance(stmt, ast.AsyncFunctionDef):
+        stmt.body = desugar_statement_list(stmt.body, gen_sym)
+        return remainder
+    elif isinstance(stmt, ast.ClassDef):
+        return remainder
+    elif isinstance(stmt, ast.Return):
+        return remainder
+    elif isinstance(stmt, ast.Delete):
+        return remainder
+    elif isinstance(stmt, ast.Assign):
+        assign = cast(ast.Assign, stmt)
+        if (isinstance(assign.value, ast.UnaryOp) and isinstance(assign.value.op, ast.Invert)):
+            # Input:
+            #   foo = ~bar
+            #   [...rest...]
+            #   return 42
+            # Output:
+            #   def temp(bar_bind_result):
+            #      foo = bar_bind_result  # (handles various assignment stuff)
+            #      [...rest...]
+            #      return 42
+            #   bar.{map, flat_map}(temp)
+            unary_op = cast(ast.UnaryOp, assign.value)
             func_name = gen_sym()
-            if use_map:
-                use_map = False
-                expr = q[ZIOStatic.succeed(None).map(name[func_name])]
-            else:
-                expr = q[ZIOStatic.succeed(None).flat_map(name[func_name])]
-            last_statement = ast.Assign([ast.Name(args[0].id, ast.Store())], expr)
-            func = make_remainder_function(func_name, gen_sym(), tree)
-            ret = [func, last_statement]
-            return ret
-        else:
-            func_name = gen_sym()
-            var_name = gen_sym() if is_bind_throwaway(tree[idx_last_bind]) else tree[idx_last_bind].targets[0].id
-            remainder = tree[(idx_last_bind + 1):]
-            func = make_remainder_function(func_name, var_name, remainder)
-            if use_map:
-                use_map = False
-                expr = ast.Expr(q[ast_literal[tree[idx_last_bind].value.operand].map(name[func_name])])
-            else:
-                expr = ast.Expr(q[ast_literal[tree[idx_last_bind].value.operand].flat_map(name[func_name])])
 
-            tree = tree[0:idx_last_bind] + [func, expr]
-            continue
+            flat_map_arg_name = gen_sym()
+            assign.value = q[name[flat_map_arg_name]]
+
+            flat_map_function_def = ast.FunctionDef(
+                func_name,
+                ast.arguments([ast.arg(flat_map_arg_name, None)], None, [], [], None, []),
+                remainder if remainder else [],  # TODO
+                [], None)
+            flat_map_call = q[ast_literal[unary_op.operand].flat_map(name[func_name])]
+
+            return_call = ast.Return(flat_map_call)
+
+            return [flat_map_function_def, return_call]
+        else:
+            return remainder
+    elif isinstance(stmt, ast.AugAssign):
+        return remainder
+    elif isinstance(stmt, ast.AnnAssign):
+        return remainder
+    elif isinstance(stmt, ast.For):
+        return remainder
+    elif isinstance(stmt, ast.AsyncFor):
+        return remainder
+    elif isinstance(stmt, ast.While):
+        return remainder
+    elif isinstance(stmt, ast.If):
+        stmt.body = desugar_statement_list(stmt.body, gen_sym)
+        stmt.orelse = desugar_statement_list(stmt.orelse, gen_sym)
+        return remainder
+    elif isinstance(stmt, ast.With):
+        stmt.body = desugar_statement_list(stmt.body, gen_sym)
+        return remainder
+    elif isinstance(stmt, ast.AsyncWith):
+        stmt.body = desugar_statement_list(stmt.body, gen_sym)
+        return remainder
+    elif isinstance(stmt, ast.Raise):
+        return remainder
+    elif isinstance(stmt, ast.Try):
+        stmt.body = desugar_statement_list(stmt.body, gen_sym)
+        # NOTE: Semantics are not clear here.  Should try to tie this into
+        # ZIO's error types.
+
+        stmt.orelse = desugar_statement_list(stmt.orelse, gen_sym)
+        stmt.finalbody = desugar_statement_list(stmt.finalbody, gen_sym)
+
+        for handler in stmt.handlers:
+            handler.body = desugar_statement_list(handler.body, gen_sym)
+        return remainder
+    elif isinstance(stmt, ast.Assert):
+        return remainder
+    elif isinstance(stmt, ast.Import):
+        return remainder
+    elif isinstance(stmt, ast.ImportFrom):
+        return remainder
+    elif isinstance(stmt, ast.Global):
+        return remainder
+    elif isinstance(stmt, ast.Nonlocal):
+        return remainder
+    elif isinstance(stmt, ast.Expr):
+        expr = cast(ast.Expr, stmt.value)
+        if isinstance(expr, ast.BoolOp):
+            return remainder
+        elif isinstance(expr, ast.BinOp):
+            return remainder
+        elif isinstance(expr, ast.UnaryOp):
+            if isinstance(expr.op, ast.Invert):
+                unary_op = stmt.value
+
+                # Input:
+                #   ~bar
+                #   [...rest...]
+                #   return 42
+                # Output:
+                #   def temp(throwaway):
+                #      [...rest...]
+                #      return 42
+                #   bar.{map, flat_map}(temp)
+                func_name = gen_sym()
+
+                flat_map_arg_name = gen_sym()
+
+                flat_map_function_def = ast.FunctionDef(
+                    func_name,
+                    ast.arguments([ast.arg(flat_map_arg_name, None)], None, [], [], None, []),
+                    remainder[1:] if remainder[1:] else [],  # TODO
+                    [], None)
+                flat_map_call = q[ast_literal[unary_op.operand].flat_map(name[func_name])]
+                return_call = ast.Return(flat_map_call)
+
+                return [flat_map_function_def, return_call]
+            else:
+                return remainder
+        elif isinstance(expr, ast.Lambda):
+            return remainder
+        elif isinstance(expr, ast.IfExp):
+            return remainder
+        elif isinstance(expr, ast.Dict):
+            return remainder
+        elif isinstance(expr, ast.Set):
+            return remainder
+        elif isinstance(expr, ast.ListComp):
+            return remainder
+        elif isinstance(expr, ast.SetComp):
+            return remainder
+        elif isinstance(expr, ast.DictComp):
+            return remainder
+        elif isinstance(expr, ast.GeneratorExp):
+            return remainder
+        elif isinstance(expr, ast.Await):
+            return remainder
+        elif isinstance(expr, ast.Yield):
+            return remainder
+        elif isinstance(expr, ast.YieldFrom):
+            return remainder
+        elif isinstance(expr, ast.Compare):
+            return remainder
+        elif isinstance(expr, ast.Call):
+            return remainder
+        elif isinstance(expr, ast.Compare):
+            return remainder
+        elif isinstance(expr, ast.Num):
+            return remainder
+        elif isinstance(expr, ast.Str):
+            return remainder
+        elif isinstance(expr, ast.FormattedValue):
+            return remainder
+        elif isinstance(expr, ast.JoinedStr):
+            return remainder
+        elif isinstance(expr, ast.Bytes):
+            return remainder
+        elif isinstance(expr, ast.NameConstant):
+            return remainder
+        elif isinstance(expr, ast.Ellipsis):
+            return remainder
+        elif isinstance(expr, ast.Attribute):
+            return remainder
+        elif isinstance(expr, ast.Subscript):
+            return remainder
+        elif isinstance(expr, ast.Starred):
+            return remainder
+        elif isinstance(expr, ast.Name):
+            return remainder
+        elif isinstance(expr, ast.List):
+            return remainder
+        elif isinstance(expr, ast.Tuple):
+            return remainder
+        else:
+            return remainder
+    elif isinstance(stmt, ast.Pass):
+        return remainder
+    elif isinstance(stmt, ast.Break):
+        return remainder
+    elif isinstance(stmt, ast.Continue):
+        return remainder
+    else:
+        raise TypeError(f"Unexpected ast statement type: {stmt}")

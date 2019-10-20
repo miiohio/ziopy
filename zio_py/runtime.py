@@ -2,7 +2,7 @@ from typing import Any, Generic, List, TypeVar
 
 from zio_py.cause import Cause
 from zio_py.zio import (ZIO, EffectPartial, EffectTotal, Fail, FlatMap, Fold,
-                     MapFn, Provide, Read, Succeed)
+                        MapFn, Provide, Read, Succeed)
 
 A = TypeVar('A')
 E = TypeVar('E')
@@ -15,9 +15,8 @@ class Runtime(Generic[R]):
 
     def unsafe_run_sync(self: 'Runtime[R]', zio: ZIO[Any, E, A]) -> A:
         if isinstance(zio, FlatMap):
-            the_zio = zio.zio
             k = zio.k
-            a = self.unsafe_run_sync(the_zio)
+            a = self.unsafe_run_sync(zio.zio)
             return self.unsafe_run_sync(k(a))  # type: ignore
         elif isinstance(zio, EffectTotal):
             return zio.effect()
