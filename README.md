@@ -34,7 +34,9 @@ It's a fantastic day to write ZIO programs in Python.
 Enter your name: William
 Good to meet you, William!
 Your age is 42.
-That's all folks.
+X is 1
+Y is 2
+Z is 3
 1000
 Done.
 ```
@@ -88,8 +90,6 @@ result = runtime.unsafe_run_sync(program.provide(live_console))
 ```
 
 # Monad comprehension syntactic sugar
-(A Pythonista somewhere squirms and writhes in agony.  Shrug!)
-
 Using `flat_map` and `map` throughout Python code quickly becomes unruly.  ZIO
 for Python uses [macropy](https://github.com/lihaoyi/macropy) to enable an
 alternative syntax that is much flatter AND THEREFORE MORE PYTHONIC.  (You 
@@ -98,20 +98,15 @@ cannot argue with me here, don't even try.)
 To use it, first import the following at the top of your source file:
 
 ```python
-from zio_py.syntax import macros, monad
+from zio_py.syntax import macros, monadic
 ```
 
-This will load the macro tooling, which you can invoke by creating a `with` block
-to create a monadic value that is bound to the variable called `program` (you
-can call it whatever you want):
+This will load the macro tooling, which you can invoke within a function body
+by decorating the function with a `@monadic` decorator:
 
 ```python
-# To keep the IDE happy, declare `program` here.  Technically this
-# is not necessary, as it is instantiated/bound via the `with monad`
-# block below.
-program: ZIO[Console, Exception, int]
-
-with monad(program):
+@monadic
+def program() -> ZIO[Console, Exception, int]:
     ...
 ```
 
@@ -119,10 +114,12 @@ Now put your ZIO code in place of the ellipsis and sprinkle on some syntactic
 sugar.  Simple!
 
 ```python
-with monad(program):
+@monadic
+def program() -> ZIO[Console, Exception, int]:
     ~print_line("Good morning!")
     name = ~read_line("What is your name? ")
-    ~print_line(f"Good to meet you, {name}!")
+    return print_line(f"Good to meet you, {name}!")
+
 ```
 
 You might be wondering about the `~` operators (a.k.a. 
@@ -150,7 +147,15 @@ Python monads.
 
 Here is a more sophisticated program:
 ```python
-with monad(program):
+from zio_py.zio import ZIO, ZIOStatic
+from zio_py.console import Console, print_line, read_line
+from zio_py.syntax import macros, monadic  # noqa: F401
+
+
+# To use the `~` short-hand syntax for monadic binds within a function,
+# decorate your function with the `@monadic` decorator.
+@monadic
+def my_program() -> ZIO[Console, Exception, int]:
     # You can declare variables that are not lifted into a monadic context.
     w = 'sunshine'
 
@@ -164,12 +169,24 @@ with monad(program):
     # This is a monadic bind where the variable is called `name`.
     # Desugars (approximately) to `read_line(...).flat_map(lambda name: ...)`
     name = ~read_line("Enter your name: ")
+
+    # Yes, type inference with mypy and in the IDE works!
+    # reveal_type(name) will show `str`
+
     your_age = 42
     ~print_line(f"Good to meet you, {name}!")
     ~print_line(f"Your age is {your_age}.")
 
-    # The `~ZIOStatic.succeed(1000)` is like `return 1000` in Haskell, or
+    # The usual complex assignment syntaxes work as well.
+    [x, y, z] = ~ZIOStatic.succeed([1, 2, 3])
+    ~print_line(f"X is {x}")
+    ~print_line(f"Y is {y}")
+    ~print_line(f"Z is {z}")
+
+    # The `ZIOStatic.succeed(1000)` is like `return 1000` in Haskell, or
     # `yield 1000` in Scala.
-    print("That's all folks.")
-    ~ZIOStatic.succeed(1000)
+    # The rule is simple; you just have to return a value consistent with the
+    # type signature of your function (like always).  Mypy will complain
+    # at you if you get anything wrong.
+    return ZIOStatic.succeed(1000)
 ```
