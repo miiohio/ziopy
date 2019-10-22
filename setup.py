@@ -1,16 +1,16 @@
 from distutils.core import setup
 
-with open('README.md') as f:
-    long_description = f.read()
-
 setup(
     name='zio_py',
     packages=['zio_py'],
     version='0.0.4a',
     license='Apache license 2.0',
     description='Python port of Scala ZIO for pure functional programming',
-    long_description=long_description,
-    long_description_content_type='text/markdown',  # This is important!
+    long_description="""ZIO for Python (see https://github.com/zio/zio and https://github.com/harveywi/ziopy)
+
+This is a fairly straightforward (unofficial and plucky) port of the
+Scala ZIO library.  Work in progress.
+    """,
     author='William Harvey',
     author_email='drwjharvey@gmail.com',
     url='https://github.com/harveywi/ziopy',
