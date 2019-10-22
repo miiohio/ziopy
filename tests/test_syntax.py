@@ -1,5 +1,7 @@
 from typing import List
 
+import pytest
+
 from zio_py.runtime import Runtime
 from zio_py.syntax import macros, monadic  # noqa: F401
 from zio_py.zio import UIO, ZIOStatic
@@ -174,45 +176,70 @@ def test_if_then_else_1(simple_runtime: Runtime):
 
     assert simple_runtime.unsafe_run_sync(func()) == "False"
 
-# def test_if_then_else_2(simple_runtime: Runtime):
-#     @monadic
-#     def func() -> UIO[int]:
-#         x = ~ZIOStatic.succeed(False)
-#         if x:
-#             a, b, c = ~ZIOStatic.succeed([1, 2, 3])
-#         else:
-#             a, b, c = ~ZIOStatic.succeed([4, 5, 6])
-#         return ZIOStatic.succeed(a + b + c)
 
-#     assert simple_runtime.unsafe_run_sync(func()) == 4 + 5 + 6
+def test_if_then_else_2(simple_runtime: Runtime):
+    @monadic
+    def func() -> UIO[int]:
+        x = ~ZIOStatic.succeed(False)
+        if x:
+            a, b, c = ~ZIOStatic.succeed([1, 2, 3])
+        else:
+            a, b, c = ~ZIOStatic.succeed([4, 5, 6])
+        return ZIOStatic.succeed(a + b + c)
 
-# TODO: This is a little bit tricky because
-# the `body` and `orelse` clauses might return something (from `func()`),
-# or they might not (in which case our `flat_map` call will not produce a value).
-# Need to clarify how this works.
+    assert simple_runtime.unsafe_run_sync(func()) == 4 + 5 + 6
 
-# def test_if_then_else_2(simple_runtime: Runtime):
-#     xs: List[int] = []
-#     def impure_1() -> None:
-#         nonlocal xs
-#         xs.append(1)
 
-#     def impure_2() -> None:
-#         nonlocal xs
-#         xs.append(2)
+def test_if_then_else_3(simple_runtime: Runtime):
+    xs: List[int] = []
 
-#     @monadic
-#     def func() -> UIO[int]:
-#         x = ~ZIOStatic.succeed(False)
-#         if x:
-#             ~ZIOStatic.effect_total(impure_1)
-#         else:
-#             ~ZIOStatic.effect_total(impure_2)
-#         return ZIOStatic.succeed(42)
+    def impure_1() -> None:
+        nonlocal xs
+        xs.append(1)
 
-#     result = simple_runtime.unsafe_run_sync(func())
-#     print(result)
-#     assert simple_runtime.unsafe_run_sync(func()) == 42
+    def impure_2() -> None:
+        nonlocal xs
+        xs.append(2)
+
+    @monadic
+    def func() -> UIO[int]:
+        x = ~ZIOStatic.succeed(False)
+        if x:
+            ~ZIOStatic.effect_total(impure_1)
+        else:
+            ~ZIOStatic.effect_total(impure_2)
+        return ZIOStatic.succeed(42)
+
+    result = simple_runtime.unsafe_run_sync(func())
+    print(result)
+    assert simple_runtime.unsafe_run_sync(func()) == 42
+
+
+@pytest.mark.parametrize(
+    "x1, x2, expected", [
+        (True, True, 'A'),
+        (True, False, 'B'),
+        (False, True, 'C'),
+        (False, False, 'D')
+    ]
+)
+def test_if_then_else_nested(simple_runtime: Runtime, x1: bool, x2: bool, expected: str):
+    @monadic
+    def func() -> UIO[str]:
+        x = ~ZIOStatic.succeed(x1)
+        if x:
+            bippy = ~ZIOStatic.succeed(x2)
+            if bippy:
+                return ZIOStatic.succeed('A')
+            return ZIOStatic.succeed('B')
+        else:
+            bippy = ~ZIOStatic.succeed(x2)
+            if bippy:
+                return ZIOStatic.succeed('C')
+            else:
+                return ZIOStatic.succeed('D')
+
+    assert simple_runtime.unsafe_run_sync(func()) == expected
 
 
 def test_recursion(simple_runtime: Runtime):
