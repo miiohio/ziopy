@@ -33,9 +33,19 @@ def my_program() -> ZIO[Console, Exception, int]:
     # Yes, type inference with mypy and in the IDE works!
     # reveal_type(name) will show `str`
 
-    your_age = 42
+    your_age = ~read_line("Enter your age: ").map(int)
     ~print_line(f"Good to meet you, {name}!")
     ~print_line(f"Your age is {your_age}.")
+
+    # if/then/else logic works as you'd expect
+    if your_age >= 21:
+        ~print_line("You are 21 or older")
+        age_of_majority = True
+    else:
+        ~print_line("You are younger than 21")
+        age_of_majority = False
+    ~print_line("You're an adult" if age_of_majority
+                else "You're young, lucky you")
 
     # The usual complex assignment syntaxes work as well.
     [x, y, z] = ~ZIOStatic.succeed([1, 2, 3])

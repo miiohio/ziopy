@@ -100,9 +100,9 @@ def desugar_remainder(remainder: List[ast.stmt], gen_sym) -> List[ast.stmt]:
     elif isinstance(stmt, ast.While):
         return remainder
     elif isinstance(stmt, ast.If):
-        stmt.body = desugar_statement_list(stmt.body, gen_sym)
-        stmt.orelse = desugar_statement_list(stmt.orelse, gen_sym)
-        return remainder
+        stmt.body = desugar_statement_list(stmt.body + remainder[1:], gen_sym)
+        stmt.orelse = desugar_statement_list(stmt.orelse + remainder[1:], gen_sym)
+        return [stmt]
     elif isinstance(stmt, ast.With):
         stmt.body = desugar_statement_list(stmt.body, gen_sym)
         return remainder
