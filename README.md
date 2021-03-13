@@ -60,6 +60,18 @@ $ pip install zio-py
 Alternatively, you can install `zio-py` from source by cloning this repo and
 running the provided `setup.sh` script.
 
+If you are using [mypy](https://github.com/python/mypy) to typecheck your Python
+code (and you should be!), add `ziopy.mypy_plugin` to your project's `mypy.ini`
+configuration file. For example:
+```
+[mypy]
+plugins = ziopy.mypy_plugin
+```
+
+The plugin offers some improved type inference around function type signatures,
+and also imposes some type constraints related to the "generalized monadic do"
+notation. You won't want to use ZIO-py without it.
+
 How to Use It
 -------------
 Check out the [Scala ZIO documentation](https://zio.dev/) for the definitive
