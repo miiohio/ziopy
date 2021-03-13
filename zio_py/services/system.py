@@ -1,7 +1,7 @@
 import sys
 from abc import ABCMeta, abstractmethod
 from typing import List, NoReturn, Optional
-from typing_extensions import TypedDict
+from typing_extensions import Protocol
 
 import zio_py.services.mock_effects.system as system_effect
 from zio_py.zio import ZIO, Environment
@@ -31,9 +31,11 @@ class MockSystem(System):
         return self._effects
 
 
-class _HasSystem(TypedDict):
-    system: System
+class HasSystem(Protocol):
+    @property
+    def system(self) -> System:
+        pass  # pragma: nocover
 
 
-def exit(exit_code: Optional[int] = None) -> ZIO[_HasSystem, NoReturn, NoReturn]:
-    return Environment[_HasSystem]().flat_map(lambda env: env['system'].exit(exit_code))
+def exit(exit_code: Optional[int] = None) -> ZIO[HasSystem, NoReturn, NoReturn]:
+    return Environment[HasSystem]().flat_map(lambda env: env.system.exit(exit_code))

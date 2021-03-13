@@ -7,6 +7,7 @@ from unittest.mock import patch
 import zio_py.services.console as console
 import zio_py.services.mock_effects.console as console_effect
 import zio_py.services.mock_effects.system as system_effect
+from zio_py.environments import ConsoleEnvironment, ConsoleSystemEnvironment
 from zio_py.zio import ZIO, unsafe_run
 from zio_py.services.console import LiveConsole, MockConsole
 from zio_py.services.system import MockSystem
@@ -14,13 +15,13 @@ from zio_py.services.system import MockSystem
 
 def test_live_console_print_without_running() -> None:
     with patch('builtins.print') as mock_print:
-        console.print("Hello world").provide({'console': LiveConsole()})
+        console.print("Hello world").provide(ConsoleEnvironment(LiveConsole()))
     mock_print.assert_not_called()
 
 
 def test_live_console_print_with_running() -> None:
     with patch('builtins.print', return_value=None) as mock_print:
-        program = console.print("Hello world").provide({'console': LiveConsole()})
+        program = console.print("Hello world").provide(ConsoleEnvironment(LiveConsole()))
         output = unsafe_run(program)
         assert output is None
     mock_print.assert_called_with("Hello world")
@@ -28,13 +29,13 @@ def test_live_console_print_with_running() -> None:
 
 def test_live_console_input_no_prompt_without_running() -> None:
     with patch('builtins.input') as mock_input:
-        console.input().provide({'console': LiveConsole()})
+        console.input().provide(ConsoleEnvironment(LiveConsole()))
     mock_input.assert_not_called()
 
 
 def test_live_console_input_no_prompt_with_running() -> None:
     with patch('builtins.input', return_value="Hello") as mock_input:
-        program = console.input().provide({'console': LiveConsole()})
+        program = console.input().provide(ConsoleEnvironment(LiveConsole()))
         output = unsafe_run(program)
 
     assert output == "Hello"
@@ -43,7 +44,7 @@ def test_live_console_input_no_prompt_with_running() -> None:
 
 def test_live_console_input_with_prompt() -> None:
     with patch('builtins.input', return_value="Hello") as mock_input:
-        program = console.input("Prompt").provide({'console': LiveConsole()})
+        program = console.input("Prompt").provide(ConsoleEnvironment(LiveConsole()))
         output = unsafe_run(program)
 
     assert output == "Hello"
@@ -52,7 +53,7 @@ def test_live_console_input_with_prompt() -> None:
 
 def test_live_console_input_with_eof_error() -> None:
     with patch('builtins.input', side_effect=EOFError) as mock_input:
-        program = console.input("Prompt").provide({'console': LiveConsole()})
+        program = console.input("Prompt").provide(ConsoleEnvironment(LiveConsole()))
 
         with pytest.raises(EOFError):
             unsafe_run(program)
@@ -61,7 +62,7 @@ def test_live_console_input_with_eof_error() -> None:
 
 def test_live_console_input_with_keyboard_interrupt() -> None:
     with patch('builtins.input', side_effect=KeyboardInterrupt) as mock_input:
-        program = console.input("Prompt").provide({'console': LiveConsole()})
+        program = console.input("Prompt").provide(ConsoleEnvironment(LiveConsole()))
 
         with pytest.raises(KeyboardInterrupt):
             unsafe_run(program)
@@ -71,7 +72,7 @@ def test_live_console_input_with_keyboard_interrupt() -> None:
 def test_mock_console_print() -> None:
     mock_console = MockConsole()
     output = unsafe_run(
-        (console.print("Hello") << console.print("World")).provide({'console': mock_console})
+        (console.print("Hello") << console.print("World")).provide(ConsoleEnvironment(mock_console))
     )
     assert output is None
 
@@ -91,7 +92,11 @@ def test_get_input_from_console_1() -> None:
     mock_console = MockConsole(["42"])
     mock_system = MockSystem()
 
-    output = unsafe_run(program.provide({'console': mock_console, 'system': mock_system}))
+    output = unsafe_run(
+        program.provide(
+            ConsoleSystemEnvironment(console=mock_console, system=mock_system)
+        )
+    )
     assert output == 42
     assert mock_console.effects == [
         console_effect.Input("How much wood would a woodchuck chuck?", "42")
@@ -109,7 +114,11 @@ def test_get_input_from_console_2() -> None:
     mock_console = MockConsole(["bad", "input", "42"])
     mock_system = MockSystem()
 
-    output = unsafe_run(program.provide({'console': mock_console, 'system': mock_system}))
+    output = unsafe_run(
+        program.provide(
+            ConsoleSystemEnvironment(console=mock_console, system=mock_system)
+        )
+    )
     assert output == 42
     assert mock_console.effects == [
         console_effect.Input("How much wood would a woodchuck chuck?", "bad"),
@@ -128,7 +137,11 @@ def test_get_input_from_console_default() -> None:
 
     mock_console = MockConsole(["bad", "input", ""])
     mock_system = MockSystem()
-    output = unsafe_run(program.provide({'console': mock_console, 'system': mock_system}))
+    output = unsafe_run(
+        program.provide(
+            ConsoleSystemEnvironment(console=mock_console, system=mock_system)
+        )
+    )
     assert output == 42
     assert mock_console.effects == [
         console_effect.Input("How much wood would a woodchuck chuck?", "bad"),
@@ -147,7 +160,11 @@ def test_get_input_from_console_default_2() -> None:
 
     mock_console = MockConsole(["bad", "input", "", "42"])
     mock_system = MockSystem()
-    output = unsafe_run(program.provide({'console': mock_console, 'system': mock_system}))
+    output = unsafe_run(
+        program.provide(
+            ConsoleSystemEnvironment(console=mock_console, system=mock_system)
+        )
+    )
     assert output == 42
     assert mock_console.effects == [
         console_effect.Input("How much wood would a woodchuck chuck?", "bad"),
@@ -170,7 +187,11 @@ def test_get_input_from_console_eof_error() -> None:
     mock_console = MockConsole(["bad", "input", exception])
     mock_system = MockSystem()
     with pytest.raises(SystemExit):
-        unsafe_run(program.provide({'console': mock_console, 'system': mock_system}))
+        unsafe_run(
+            program.provide(
+                ConsoleSystemEnvironment(console=mock_console, system=mock_system)
+            )
+        )
 
     assert mock_console.effects == [
         console_effect.Input("How much wood would a woodchuck chuck?", "bad"),
@@ -216,7 +237,11 @@ def test_ask(
     mock_console = MockConsole(user_input)
     mock_system = MockSystem()
 
-    output = unsafe_run(program.provide({'console': mock_console, 'system': mock_system}))
+    output = unsafe_run(
+        program.provide(
+            ConsoleSystemEnvironment(console=mock_console, system=mock_system)
+        )
+    )
     assert output == expected_output
     assert mock_console.user_input == []
     assert mock_system.effects == []

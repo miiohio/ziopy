@@ -5,8 +5,8 @@ from typing import Callable, List, NoReturn, Optional, TypeVar, Union
 import zio_py.services.mock_effects.console as console_effect
 from zio_py.either import Either, Right
 from zio_py.zio import ZIO, Environment, ZIOMonad, monadic
-from zio_py.services.system import System
-from typing_extensions import Literal, TypedDict
+from zio_py.services.system import System, HasSystem
+from typing_extensions import Literal, Protocol
 
 A = TypeVar('A')
 E = TypeVar('E')
@@ -122,45 +122,47 @@ class MockConsole(Console):
         return self._user_input
 
 
-class _HasConsole(TypedDict):
-    console: Console
+class HasConsole(Protocol):
+    @property
+    def console(self) -> Console:
+        pass  # pragma: nocover
 
 
 print = (
-    Environment[_HasConsole]()
-    .map(lambda env: ZIO.from_callable(env['console'].print).flatten())
+    Environment[HasConsole]()
+    .map(lambda env: ZIO.from_callable(env.console.print).flatten())
     .swap_environments()
     .to_callable()
 )
 
 input = (
-    Environment[_HasConsole]()
-    .map(lambda env: ZIO.from_callable(env['console'].input).flatten())
+    Environment[HasConsole]()
+    .map(lambda env: ZIO.from_callable(env.console.input).flatten())
     .swap_environments()
     .to_callable()
 )
 
 
-class _HasConsoleSystem(_HasConsole):
-    system: System
+class HasConsoleSystem(HasConsole, HasSystem, Protocol):
+    pass
 
 
 def get_input_from_console(
     prompt: str,
     parse_value: Callable[[str], Either[E, A]],
     default_value: Optional[A]
-) -> ZIO[_HasConsoleSystem, NoReturn, A]:
+) -> ZIO[HasConsoleSystem, NoReturn, A]:
     return (
-        Environment[_HasConsoleSystem]()
+        Environment[HasConsoleSystem]()
         .flat_map(
-            lambda env: env['console'].get_input_from_console(
+            lambda env: env.console.get_input_from_console(
                 prompt, parse_value, default_value
-            ).provide(env['system'])
+            ).provide(env.system)
         )
     )
 
 
-def ask(prompt: str, default: Literal['y', 'n']) -> ZIO[_HasConsoleSystem, NoReturn, bool]:
-    return Environment[_HasConsoleSystem]().flat_map(
-        lambda env: env['console'].ask(prompt, default).provide(env['system'])
+def ask(prompt: str, default: Literal['y', 'n']) -> ZIO[HasConsoleSystem, NoReturn, bool]:
+    return Environment[HasConsoleSystem]().flat_map(
+        lambda env: env.console.ask(prompt, default).provide(env.system)
     )

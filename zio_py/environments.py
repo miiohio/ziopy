@@ -1,16 +1,19 @@
-from typing_extensions import TypedDict
+from dataclasses import dataclass
 
 import zio_py.services.console as console
 import zio_py.services.system as system
 
 
-class HasConsole(TypedDict):
+@dataclass(frozen=True)
+class ConsoleEnvironment:
     console: console.Console
 
 
-class HasSystem(TypedDict):
+@dataclass(frozen=True)
+class SystemEnvironment:
     system: system.System
 
 
-class HasConsoleSystem(HasConsole, HasSystem):
+@dataclass(frozen=True)
+class ConsoleSystemEnvironment(ConsoleEnvironment, SystemEnvironment):
     pass

@@ -2,7 +2,7 @@ from typing import NoReturn, Union
 
 import zio_py.services.console as console
 import zio_py.services.system as system
-from zio_py.environments import HasConsoleSystem
+from zio_py.environments import ConsoleSystemEnvironment
 from zio_py.services.console import Console, LiveConsole
 from zio_py.zio import ZIO, ZIOMonad, monadic, unsafe_run, Environment
 
@@ -44,7 +44,9 @@ print(f"Final result (2) is: {final_result_2}")
 
 
 @monadic
-def prog(do: ZIOMonad[HasConsoleSystem, NoReturn]) -> ZIO[HasConsoleSystem, NoReturn, int]:
+def prog(
+    do: ZIOMonad[ConsoleSystemEnvironment, NoReturn]
+) -> ZIO[ConsoleSystemEnvironment, NoReturn, int]:
     age = do << console.get_input_from_console(
         prompt="How old are you?\n",
         parse_value=ZIO.from_callable(str).map(int).catch(ValueError).either().to_callable(),
@@ -54,4 +56,8 @@ def prog(do: ZIOMonad[HasConsoleSystem, NoReturn]) -> ZIO[HasConsoleSystem, NoRe
     return ZIO.succeed(age)
 
 
-unsafe_run(prog().provide({'console': LiveConsole(), 'system': system.LiveSystem()}))
+unsafe_run(
+    prog().provide(
+        ConsoleSystemEnvironment(console=LiveConsole(), system=system.LiveSystem())
+    )
+)
