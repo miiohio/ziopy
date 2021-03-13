@@ -3,8 +3,8 @@ from abc import ABCMeta, abstractmethod
 from typing import List, NoReturn, Optional
 from typing_extensions import Protocol
 
-import zio_py.services.mock_effects.system as system_effect
-from zio_py.zio import ZIO, Environment
+import ziopy.services.mock_effects.system as system_effect
+from ziopy.zio import ZIO, Environment
 
 
 class System(metaclass=ABCMeta):

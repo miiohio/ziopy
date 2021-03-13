@@ -18,20 +18,20 @@ class CustomPlugin(Plugin):
                         function_ctx.context
                     )
 
-                # Ensure that the type of the "do" argument is zio_py.zio.ZIOMonad
+                # Ensure that the type of the "do" argument is ziopy.zio.ZIOMonad
                 a = t.arg_types[idx]
-                if not isinstance(a, mt.Instance) or a.type.fullname != 'zio_py.zio.ZIOMonad':
+                if not isinstance(a, mt.Instance) or a.type.fullname != 'ziopy.zio.ZIOMonad':
                     function_ctx.api.fail(
-                        "The 'do' parameter must be of type zio_py.zio.ZIOMonad",
+                        "The 'do' parameter must be of type ziopy.zio.ZIOMonad",
                         function_ctx.context
                     )
                     return function_ctx.default_return_type
 
-                # Ensure that the return type is zio_py.zio.ZIO
+                # Ensure that the return type is ziopy.zio.ZIO
                 b = t.ret_type
-                if not isinstance(b, mt.Instance) or b.type.fullname != "zio_py.zio.ZIO":
+                if not isinstance(b, mt.Instance) or b.type.fullname != "ziopy.zio.ZIO":
                     function_ctx.api.fail(
-                        "The return value must be of type zio_py.zio.ZIO",
+                        "The return value must be of type ziopy.zio.ZIO",
                         function_ctx.context
                     )
                     return function_ctx.default_return_type
@@ -102,7 +102,7 @@ class CustomPlugin(Plugin):
         self,
         fullname: str
     ) -> typing.Optional[typing.Callable[[FunctionContext], Type]]:
-        if fullname == "zio_py.zio.monadic":
+        if fullname == "ziopy.zio.monadic":
             return self._analyze_decorator
         return None
 
@@ -110,9 +110,9 @@ class CustomPlugin(Plugin):
         self,
         fullname: str
     ) -> typing.Optional[typing.Callable[[MethodContext], Type]]:
-        if fullname == "zio_py.zio.ZIO.from_callable":
+        if fullname == "ziopy.zio.ZIO.from_callable":
             return self._analyze_method_context_from_callable
-        elif fullname == "zio_py.zio.ZIO.to_callable":
+        elif fullname == "ziopy.zio.ZIO.to_callable":
             return self._analyze_method_context_to_callable
         return None
 

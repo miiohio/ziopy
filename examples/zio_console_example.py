@@ -1,10 +1,10 @@
 from typing import NoReturn, Union
 
-import zio_py.services.console as console
-import zio_py.services.system as system
-from zio_py.environments import ConsoleSystemEnvironment
-from zio_py.services.console import Console, LiveConsole
-from zio_py.zio import ZIO, ZIOMonad, monadic, unsafe_run, Environment
+import ziopy.services.console as console
+import ziopy.services.system as system
+from ziopy.environments import ConsoleSystemEnvironment
+from ziopy.services.console import Console, LiveConsole
+from ziopy.zio import ZIO, ZIOMonad, monadic, unsafe_run, Environment
 
 
 @monadic

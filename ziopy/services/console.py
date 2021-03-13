@@ -2,10 +2,10 @@ import builtins
 from abc import ABCMeta, abstractmethod
 from typing import Callable, List, NoReturn, Optional, TypeVar, Union
 
-import zio_py.services.mock_effects.console as console_effect
-from zio_py.either import Either, Right
-from zio_py.zio import ZIO, Environment, ZIOMonad, monadic
-from zio_py.services.system import System, HasSystem
+import ziopy.services.mock_effects.console as console_effect
+from ziopy.either import Either, Right
+from ziopy.zio import ZIO, Environment, ZIOMonad, monadic
+from ziopy.services.system import System, HasSystem
 from typing_extensions import Literal, Protocol
 
 A = TypeVar('A')

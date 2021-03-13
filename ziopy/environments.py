@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-import zio_py.services.console as console
-import zio_py.services.system as system
+import ziopy.services.console as console
+import ziopy.services.system as system
 
 
 @dataclass(frozen=True)

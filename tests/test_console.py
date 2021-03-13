@@ -4,13 +4,13 @@ from typing_extensions import Literal
 import pytest
 from unittest.mock import patch
 
-import zio_py.services.console as console
-import zio_py.services.mock_effects.console as console_effect
-import zio_py.services.mock_effects.system as system_effect
-from zio_py.environments import ConsoleEnvironment, ConsoleSystemEnvironment
-from zio_py.zio import ZIO, unsafe_run
-from zio_py.services.console import LiveConsole, MockConsole
-from zio_py.services.system import MockSystem
+import ziopy.services.console as console
+import ziopy.services.mock_effects.console as console_effect
+import ziopy.services.mock_effects.system as system_effect
+from ziopy.environments import ConsoleEnvironment, ConsoleSystemEnvironment
+from ziopy.zio import ZIO, unsafe_run
+from ziopy.services.console import LiveConsole, MockConsole
+from ziopy.services.system import MockSystem
 
 
 def test_live_console_print_without_running() -> None:

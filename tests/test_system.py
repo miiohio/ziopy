@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch
 
-import zio_py.services.system as system
-import zio_py.services.mock_effects.system as system_effect
-from zio_py.environments import SystemEnvironment
-from zio_py.zio import unsafe_run
-from zio_py.services.system import LiveSystem, MockSystem
+import ziopy.services.system as system
+import ziopy.services.mock_effects.system as system_effect
+from ziopy.environments import SystemEnvironment
+from ziopy.zio import unsafe_run
+from ziopy.services.system import LiveSystem, MockSystem
 
 
 def test_live_system_exit_without_running() -> None:

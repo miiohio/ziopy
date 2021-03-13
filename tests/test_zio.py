@@ -4,8 +4,8 @@ from typing import Callable, NoReturn, Optional, Set, TypeVar, Union
 import pytest
 
 from . import zio_equivalence_relations as eqr
-from zio_py.either import Either, Left, Right
-from zio_py.zio import (
+from ziopy.either import Either, Left, Right
+from ziopy.zio import (
     Environment, TypeMatchException, ZIO, unsafe_run, _raise, FunctionArguments
 )
 

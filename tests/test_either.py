@@ -2,7 +2,7 @@ from typing import Callable, NoReturn, Type, TypeVar, Union
 
 import pytest
 
-from zio_py.either import Any, Either, EitherException, Left, Right
+from ziopy.either import Any, Either, EitherException, Left, Right
 
 A = TypeVar('A')
 B = TypeVar('B')

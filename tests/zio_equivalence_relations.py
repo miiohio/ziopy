@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Generic, NoReturn, TypeVar
 from typing_extensions import Final
 
-from zio_py.either import Either, Left, Right
-from zio_py.zio import ZIO, monadic, ZIOMonad, unsafe_run, _raise
+from ziopy.either import Either, Left, Right
+from ziopy.zio import ZIO, monadic, ZIOMonad, unsafe_run, _raise
 
 R = TypeVar('R')
 E = TypeVar('E', bound=BaseException)

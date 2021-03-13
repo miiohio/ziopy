@@ -1,6 +1,6 @@
 [run]
-source = zio_py
-omit = zio_py/mypy_plugin.py
+source = ziopy
+omit = ziopy/mypy_plugin.py
 
 [report]
 fail_under = 100

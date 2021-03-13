@@ -2,7 +2,7 @@ import functools
 from dataclasses import dataclass
 from typing import Callable, Generic, NoReturn, Tuple, Type, TypeVar, Union
 
-from zio_py.either import Either, Left, Right
+from ziopy.either import Either, Left, Right
 
 """
 Heavily inspired by:
