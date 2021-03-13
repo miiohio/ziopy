@@ -108,3 +108,6 @@ venv.bak/
 
 # Macintosh turds
 .DS_Store
+
+# Ignore local .venv directory
+.venv-ziopy

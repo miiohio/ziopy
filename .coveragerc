@@ -1,0 +1,7 @@
+[run]
+source = zio_py
+omit = zio_py/mypy_plugin.py
+
+[report]
+fail_under = 100
+show_missing = True
